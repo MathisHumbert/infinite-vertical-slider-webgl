@@ -10,6 +10,8 @@ export default class Canvas {
     this.createCamera();
     this.createRender();
 
+    this.onResize();
+
     this.createGeometry();
     this.createMedias();
 
@@ -76,6 +78,12 @@ export default class Canvas {
     const width = height * this.camera.aspect;
 
     this.viewport = { width, height };
+
+    if (this.medias) {
+      this.medias.forEach((media) =>
+        media.onResize({ screen: this.screen, viewport: this.viewport })
+      );
+    }
   }
 
   update() {
