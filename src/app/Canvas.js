@@ -6,6 +6,8 @@ export default class Canvas {
   constructor() {
     this.screen = { width: window.innerWidth, height: window.innerHeight };
 
+    this.galleryElement = document.querySelector('.gallery__list');
+
     this.createScene();
     this.createCamera();
     this.createRender();
@@ -14,9 +16,6 @@ export default class Canvas {
 
     this.createGeometry();
     this.createMedias();
-
-    this.update();
-    this.addEventListeners();
   }
 
   createScene() {
@@ -53,13 +52,15 @@ export default class Canvas {
     const elements = document.querySelectorAll('.gallery__item__img');
 
     this.medias = [...elements].map(
-      (element) =>
+      (element, index) =>
         new Media({
           element,
+          index,
           scene: this.scene,
           geometry: this.geometry,
           screen: this.screen,
           viewport: this.viewport,
+          galleryHeight: this.galleryHeight,
         })
     );
   }
@@ -79,20 +80,26 @@ export default class Canvas {
 
     this.viewport = { width, height };
 
+    this.galleryHeight =
+      (this.viewport.height * this.galleryElement.clientHeight) /
+      this.screen.height;
+
     if (this.medias) {
       this.medias.forEach((media) =>
-        media.onResize({ screen: this.screen, viewport: this.viewport })
+        media.onResize({
+          screen: this.screen,
+          viewport: this.viewport,
+          galleryHeight: this.galleryHeight,
+        })
       );
     }
   }
 
-  update() {
+  update(scroll, direction) {
     this.renderer.render(this.scene, this.camera);
 
-    window.requestAnimationFrame(this.update.bind(this));
-  }
-
-  addEventListeners() {
-    window.addEventListener('resize', this.onResize.bind(this));
+    if (this.medias) {
+      this.medias.forEach((media) => media.update(scroll, direction));
+    }
   }
 }

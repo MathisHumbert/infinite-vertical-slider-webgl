@@ -1,12 +1,25 @@
 import { Mesh, ShaderMaterial, TextureLoader, Vector2 } from 'three';
 
 export default class Media {
-  constructor({ element, scene, geometry, screen, viewport }) {
+  constructor({
+    element,
+    index,
+    scene,
+    geometry,
+    screen,
+    viewport,
+    galleryHeight,
+  }) {
     this.element = element;
+    this.index = index;
     this.scene = scene;
     this.geometry = geometry;
     this.screen = screen;
     this.viewport = viewport;
+    this.galleryHeight = galleryHeight;
+
+    this.scroll = 0;
+    this.extra = 0;
 
     const textureLoader = new TextureLoader();
 
@@ -16,7 +29,7 @@ export default class Media {
       this.createMaterial();
       this.createMesh();
 
-      this.onResize({ viewport, screen });
+      this.onResize({ viewport, screen, galleryHeight });
     });
   }
 
@@ -90,7 +103,7 @@ export default class Media {
 
     this.updateScale();
     this.updateX();
-    this.updateY();
+    this.updateY(this.scroll);
   }
 
   updateScale() {
@@ -116,13 +129,45 @@ export default class Media {
     this.mesh.position.y =
       this.viewport.height / 2 -
       this.mesh.scale.y / 2 -
-      ((this.bounds.top - y) / this.screen.height) * this.viewport.height;
+      ((this.bounds.top - y) / this.screen.height) * this.viewport.height -
+      this.extra;
   }
 
-  onResize({ screen, viewport }) {
+  onResize({ screen, viewport, galleryHeight }) {
     this.screen = screen;
     this.viewport = viewport;
+    this.galleryHeight = galleryHeight;
+
+    this.extra = 0;
 
     this.createBounds();
+  }
+
+  update(scroll, direction) {
+    if (!this.mesh) return;
+
+    this.scroll = scroll;
+
+    const planeOffset = this.mesh.scale.y / 2;
+    const viewportOffset = this.viewport.height / 2;
+
+    this.isBefore = this.mesh.position.y + planeOffset < -viewportOffset;
+    this.isAfter = this.mesh.position.y - planeOffset > viewportOffset;
+
+    if (direction === 'up' && this.isBefore) {
+      this.extra -= this.galleryHeight;
+
+      this.isBefore = false;
+      this.isAfter = false;
+    }
+
+    if (direction === 'down' && this.isAfter) {
+      this.extra += this.galleryHeight;
+
+      this.isBefore = false;
+      this.isAfter = false;
+    }
+
+    this.updateY(scroll);
   }
 }
